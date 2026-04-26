@@ -241,6 +241,27 @@ def add_attendee_connection():
 
         print("Connection successfully added")
 
+# Option 6 
+def view_rooms():
+    conn = get_mysql_connection()
+    cursor = conn.cursor()
+
+    query = "SELECT roomID, roomName, capacity FROM room"
+    cursor.execute(query)
+
+    results = cursor.fetchall()
+
+    if len(results) == 0:
+        print("No rooms found")
+    else:
+        for row in results:
+            print(f"Room ID: {row[0]}")
+            print(f"Room Name: {row[1]}")
+            print(f"Capacity: {row[2]}")
+            print("----------------------")
+
+        cursor.close()
+        conn.close()
 # Main menu
 def main():
     while True:
@@ -265,6 +286,8 @@ def main():
             view_connected_attendees()
         elif choice == "5":
             add_attendee_connection()
+        elif choice == "6":
+            view_rooms()
         elif choice == "x":
             print("Exiting....")
             break
