@@ -121,14 +121,14 @@ def add_new_attendee():
         
         name = input("Enter name: ")
         dob = input("Enter DOB (YYYY-MM-DD): ")
-        gender = input("Enter gender (Male/Female): ").upper()
+        gender = input("Enter gender (Male/Female): ")
         company_id = input("Enter company ID: ")
 
         if gender not in ["Male", "Female"]:
             print("Invalid gender")
             return
         
-        if company_id.isdigit():
+        if not company_id.isdigit():
             print("Invalid Company ID")
             return
         
@@ -234,7 +234,7 @@ def add_attendee_connection():
         session.run("""
             MERGE (a:Attendee {attendeeID: $id1})
             MERGE (b:Attendee {attendeeID: $id2})
-            MERGE (a)-[:CONNECTED_TO]-(b))
+            MERGE (a)-[:CONNECTED_TO]-(b)
         """, id1=id1, id2=id2)
 
         driver.close()
