@@ -61,7 +61,7 @@ def view_attendees_by_company():
             print("Invalid company ID")
             continue
 
-        cursor.execute("SELECT * FROM company WHERE company WHERE companyID = %s", (company_id))
+        cursor.execute("SELECT * FROM company WHERE companyID = %s", (company_id))
         company = cursor.fetchone()
 
         if company is None:
