@@ -1,3 +1,4 @@
+from neo4j import GraphDatabase
 import mysql.connector
 
 def get_mysql_connection():
@@ -7,6 +8,13 @@ def get_mysql_connection():
         password="root",
         database="appdbproj"
     )
+
+def get_neo4j_driver():
+    return GraphDatabase.driver(
+        "bolt://localhost:7687",
+        auth=("neo4j", "neo4jneo4j")
+    )
+
 # Option 1
 def view_speakers_sessions():
     search = input("Enter speaker name: ")
@@ -147,6 +155,48 @@ def add_new_attendee():
         cursor.close()
         conn.close()
 
+# Option 4
+def view_connected_attendees():
+    attendee_id = input("Enter attendee ID: ")
+
+    if not attendee_id.isdigit():
+        print("Invalid Attendee ID")
+        return
+    
+    attendee_id = int(attendee_id)
+
+    # Check in MySQL
+    conn = get_mysql_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM attendee WHERE attendeeID = %s", (attendee_id,))
+    if cursor.fetchone() is None:
+        print("Attendee does not exist")
+        cursor.close()
+        return
+    
+    cursor.close()
+    conn.close()
+
+    # Neo4j
+    driver = get_neo4j_driver()
+    with driver.session() as session:
+        result = session.run("""
+                MATCH (a:Attendee {attendeeID: $id})-[:CONNECTED_TO]-(b)
+                 RETURN b.attendeeID AS connectedID
+        """, id=attendee_id)
+
+        records = list(result)
+
+        if len(records) == 0:
+            print("No connections found")
+        else:
+            print("Connected Attendees: ")
+            for record in records:
+                print(record["connectedID"])
+
+    driver.close()
+    
 # Main menu
 def main():
     while True:
