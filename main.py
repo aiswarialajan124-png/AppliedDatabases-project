@@ -196,7 +196,51 @@ def view_connected_attendees():
                 print(record["connectedID"])
 
     driver.close()
+
+# Option 5
+def add_attendee_connection():
+    id1 = input("Enter first attendee ID: ")
+    id2 = input("Enter second attendee ID: ")
+
+    if not id1.isdigit() or not id2.isdigit():
+        print("Invalid Attendee ID")
+        return
     
+    id1 = int(id1)
+    id2 = int(id2)
+
+    conn = get_mysql_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM attendee WHERE attendeeID = %s", (id1,))
+    if cursor.fetchone() is None:
+        print("First attendee does not exist")
+        cursor.close()
+        conn.close()
+        return
+    
+    cursor.execute("SELECT * FROM attendee WHERE attendeeID = %s", (id2,))
+    if cursor.fetchone() is None:
+        print("Second attendee does not exist")
+        cursor.close()
+        conn.close()
+        return
+    
+    cursor.close()
+    conn.close()
+
+    driver = get_neo4j_driver()
+    with driver.session() as session:
+        session.run("""
+            MERGE (a:Attendee {attendeeID: $id1})
+            MERGE (b:Attendee {attendeeID: $id2})
+            MERGE (a)-[:CONNECTED_TO]-(b))
+        """, id1=id1, id2=id2)
+
+        driver.close()
+
+        print("Connection successfully added")
+
 # Main menu
 def main():
     while True:
@@ -217,6 +261,10 @@ def main():
             view_attendees_by_company()
         elif choice == "3":
             add_new_attendee()
+        elif choice == "4":
+            view_connected_attendees()
+        elif choice == "5":
+            add_attendee_connection()
         elif choice == "x":
             print("Exiting....")
             break
