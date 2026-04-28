@@ -98,15 +98,15 @@ def add_new_attendee():
 
 # Option 4
 def view_connected_attendees():
-    id = input("Enter attendee ID: ")
-
-   driver = get_neo4j_driver()
-
-   with driver.session() as session:
+    attendee_id = input("Enter attendee ID: ")
+    
+    driver = get_neo4j_driver()
+    
+    with driver.session() as session:
         result = session.run("""
             MATCH (a:Attendee {attendeeID:$id})-[:CONNECTED_TO]-(b)
             RETURN b.attendeeID
-        """, id=int(id))
+        """, id=int(attendee_id))
         
         data = list(result)
         
@@ -135,7 +135,7 @@ def add_attendee_connection():
         driver.close()
 
         print("Connection added")
-        
+
 # Option 6 
 def view_rooms():
     conn = get_mysql_connection()
