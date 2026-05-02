@@ -27,6 +27,13 @@ def view_speaker_sessions():
         JOIN room ON session.roomID = room.roomID
         WHERE session.speakerName LIKE %s
     """
+    
+    cursor.execute("SELECT DATABASE()")
+    print("DB:", cursor.fetchall())
+
+    cursor.execute("SHOW TABLES")
+    print("Tables:", cursor.fetchall())
+    
 
     cursor.execute(query, ("%" + search + "%",))
     results = cursor.fetchall()
@@ -200,4 +207,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
