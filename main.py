@@ -8,7 +8,6 @@ def get_mysql_connection():
         password="root",
         database="appdbproj"
     )
-
 def get_neo4j_driver():
     return GraphDatabase.driver(
         "bolt://localhost:7687",
@@ -16,27 +15,31 @@ def get_neo4j_driver():
     )
 
 # Option 1
-def view_speakers_sessions():
+def view_speaker_sessions():
     search = input("Enter speaker name: ")
 
     conn = get_mysql_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT speakerName, sessionTitle, roomName
+    query = """
+        SELECT session.speakerName, session.sessionTitle, room.roomName
         FROM session
         JOIN room ON session.roomID = room.roomID
-        WHERE speakerName LIKE %s
-    """, ("%" + search + "%",))
+        WHERE session.speakerName LIKE %s
+    """
 
+    cursor.execute(query, ("%" + search + "%",))
     results = cursor.fetchall()
 
     if not results:
         print("No speakers found")
     else:
         for r in results:
-           print(r)
-
+            print(f"Speaker: {r[0]}")
+            print(f"Session: {r[1]}")
+            print(f"Room: {r[2]}")
+            print("---------------------")
+    
     cursor.close()
     conn.close()
 
@@ -51,29 +54,33 @@ def view_attendees_by_company():
     conn = get_mysql_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
-            SELECT attendeeName, sessionTitle, speakerName
-            FROM attendee
-            JOIN registration ON attendee.attendeeID = registration.attendeeID
-            JOIN session ON registration.sessionID = session.sessionID
-            WHERE attendeeCompanyID = %s
-    """, (company_id,))
+    query = """
+        SELECT attendee.attendeeName, session.sessionTitle, session.speakerName
+        FROM attendee
+        JOIN registration ON attendee.attendeeID = registration.attendeeID
+        JOIN session ON registration.sessionID = session.sessionID
+        WHERE attendee.attendeeCompanyID = %s
+    """
 
+    cursor.execute(query, (company_id,))
     results = cursor.fetchall()
 
     if not results:
-        print("No attendees found")
+        print("No attendee found")
     else:
         for r in results:
-            print(r)
+            print(f"Name: {r[0]}")
+            print(f"Session: {r[1]}")
+            print(f"Speaker: {r[2]}")
+            print("----------------------")
 
     cursor.close()
-    conn.close()
+    cursor.close()
 
 # Option 3
 def add_new_attendee():
     try:
-        id = int(input("Enter ID: "))
+        attendee_id = int(input("Enter ID: "))
         name = input("Enter name: ")
         dob = input("Enter DOB (YYYY-MM-DD): ")
         gender = input("Enter gender (Male/Female): ")
@@ -84,11 +91,12 @@ def add_new_attendee():
 
         cursor.execute("""
             INSERT INTO attendee
+            (attendeeID, attendeeName, attendeeDOB, attendeeGender, attendeeCompanyID)
             VALUES (%s, %s, %s, %s, %s)
-        """, (id, name, dob, gender, company))
-        
+        """, (attendee_id, name, dob, gender, company))
+
         conn.commit()
-        print("Added successfully")
+        print("Added succesfully")
 
         cursor.close()
         conn.close()
@@ -99,23 +107,28 @@ def add_new_attendee():
 # Option 4
 def view_connected_attendees():
     attendee_id = input("Enter attendee ID: ")
+
+    if not attendee_id.isdigit():
+        print("Invalid ID")
+        return
     
     driver = get_neo4j_driver()
-    
+
     with driver.session() as session:
         result = session.run("""
             MATCH (a:Attendee {attendeeID:$id})-[:CONNECTED_TO]-(b)
-            RETURN b.attendeeID
+            RETURN b.attendeeID AS id
         """, id=int(attendee_id))
-        
+
         data = list(result)
-        
+
         if not data:
             print("No connections")
         else:
+            print("Connected attendees: ")
             for r in data:
-                print(r["b.attendeeID"])
-        
+                print(r["id"])
+    
     driver.close()
 
 # Option 5
@@ -123,29 +136,32 @@ def add_attendee_connection():
     id1 = input("Enter first attendee ID: ")
     id2 = input("Enter second attendee ID: ")
 
+    if not id1.isdigit() or not id2.isdigit():
+        print("Invalid ID")
+        return
+    
     driver = get_neo4j_driver()
 
     with driver.session() as session:
         session.run("""
-           MERGE (a:Attendee {attendeeID:$id1})
-           MERGE (b:Attendee {attendeeID:$id2})
-           MERGE (a)-[:CONNECTED_TO]-(b)
-        """, id1=id1, id2=id2)
+            MERGE (a:Attendee {attendeeID:$id1})
+            MERGE (b:Attendee {attendeeID:$id2})
+            MERGE (a)-[:CONNECTED_TO]-(b)
+        """, id1=int(id1), id2=int(id2))
 
-        driver.close()
-
-        print("Connection added")
+    driver.close()
+    print("Connection added")
 
 # Option 6 
 def view_rooms():
     conn = get_mysql_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM room")
+    cursor.execute("SELECT roomID, roomName, capicity FROM room")
     results = cursor.fetchall()
 
     for r in results:
-        print(r)
+        print(f"Room ID: {r[0]}, Name: {r[1]}, Capacitry: {r[2]}")
 
     cursor.close()
     conn.close()
@@ -154,7 +170,7 @@ def view_rooms():
 def main():
     while True:
         print("\nConference App")
-        print("1. View Speakers & Sessions")
+        print("1. View Speakers & Session")
         print("2. View Attendees by Company")
         print("3. Add New Attendee")
         print("4. View Connected Attendees")
@@ -165,7 +181,7 @@ def main():
         choice = input("Enter choice: ")
 
         if choice == "1":
-            view_speakers_sessions()
+            view_speaker_sessions()
         elif choice == "2":
             view_attendees_by_company()
         elif choice == "3":
@@ -177,10 +193,11 @@ def main():
         elif choice == "6":
             view_rooms()
         elif choice == "x":
-            print("Exiting....")
+            print("Exiting...")
             break
         else:
             print("Invalid option")
 
 if __name__ == "__main__":
-   main()
+    main()
+    
