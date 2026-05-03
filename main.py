@@ -1,6 +1,7 @@
 from neo4j import GraphDatabase
 import mysql.connector
 
+# MySQL connection
 def get_mysql_connection():
     return mysql.connector.connect(
         host="localhost",
@@ -8,6 +9,8 @@ def get_mysql_connection():
         password="root",
         database="appdbproj"
     )
+
+# Neo4j connection
 def get_neo4j_driver():
     return GraphDatabase.driver(
         "bolt://localhost:7687",
@@ -16,26 +19,19 @@ def get_neo4j_driver():
 
 # Option 1
 def view_speaker_sessions():
-    search = input("Enter speaker name: ")
+    name = input("Enter speaker name: ")
 
     conn = get_mysql_connection()
     cursor = conn.cursor()
 
     query = """
-        SELECT session.speakerName, session.sessionTitle, room.roomName
-        FROM session
-        JOIN room ON session.roomID = room.roomID
-        WHERE session.speakerName LIKE %s
+    SELECT s.speakerName, s.sessionTitle, r.roomName
+    FROM session s
+    JOIN room r ON s.roomID = r.roomID
+    WHERE s.speakerName LIKE %s
     """
     
-    cursor.execute("SELECT DATABASE()")
-    print("DB:", cursor.fetchall())
-
-    cursor.execute("SHOW TABLES")
-    print("Tables:", cursor.fetchall())
-    
-
-    cursor.execute(query, ("%" + search + "%",))
+    cursor.execute(query, ("%" + name + "%",))
     results = cursor.fetchall()
 
     if not results:
@@ -62,11 +58,11 @@ def view_attendees_by_company():
     cursor = conn.cursor()
 
     query = """
-        SELECT attendee.attendeeName, session.sessionTitle, session.speakerName
-        FROM attendee
-        JOIN registration ON attendee.attendeeID = registration.attendeeID
-        JOIN session ON registration.sessionID = session.sessionID
-        WHERE attendee.attendeeCompanyID = %s
+    SELECT a.attendeeName, s.sessionTitle, s.speakerName
+    FROM attendee a
+    JOIN registration r ON a.attendeeID = r.attendeeID
+    JOIN session s ON r.sessionID = s.sessionID
+    WHERE a.attendeeCompanyID = %s
     """
 
     cursor.execute(query, (company_id,))
@@ -75,14 +71,14 @@ def view_attendees_by_company():
     if not results:
         print("No attendee found")
     else:
-        for r in results:
-            print(f"Name: {r[0]}")
-            print(f"Session: {r[1]}")
-            print(f"Speaker: {r[2]}")
+        for row in results:
+            print(f"Name: {row[0]}")
+            print(f"Session: {row[1]}")
+            print(f"Speaker: {row[2]}")
             print("----------------------")
 
     cursor.close()
-    cursor.close()
+    conn.close()
 
 # Option 3
 def add_new_attendee():
@@ -91,25 +87,25 @@ def add_new_attendee():
         name = input("Enter name: ")
         dob = input("Enter DOB (YYYY-MM-DD): ")
         gender = input("Enter gender (Male/Female): ")
-        company = int(input("Enter company ID: "))
+        company_id = int(input("Enter company ID: "))
 
         conn = get_mysql_connection()
         cursor = conn.cursor()
 
         cursor.execute("""
-            INSERT INTO attendee
-            (attendeeID, attendeeName, attendeeDOB, attendeeGender, attendeeCompanyID)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (attendee_id, name, dob, gender, company))
+        INSERT INTO attendee
+        (attendeeID, attendeeName, attendeeDOB, attendeeGender, attendeeCompanyID)
+        VALUES (%s, %s, %s, %s, %s)
+        """, (attendee_id, name, dob, gender, company_id))
 
         conn.commit()
-        print("Added succesfully")
+        print("Attendee added successfully")
 
         cursor.close()
         conn.close()
 
     except Exception as e:
-        print(e)
+        print("Error:", e)
 
 # Option 4
 def view_connected_attendees():
@@ -123,18 +119,17 @@ def view_connected_attendees():
 
     with driver.session() as session:
         result = session.run("""
-            MATCH (a:Attendee {attendeeID:$id})-[:CONNECTED_TO]-(b)
-            RETURN b.attendeeID AS id
+        MATCH (a:Attendee {attendeeID:$id})-[:CONNECTED_TO]-(b)
+        RETURN b.attendeeID AS id
         """, id=int(attendee_id))
 
         data = list(result)
 
         if not data:
-            print("No connections")
+            print("No connections found")
         else:
-            print("Connected attendees: ")
-            for r in data:
-                print(r["id"])
+            for record in data:
+                print("Connected to:", record["id"])
     
     driver.close()
 
@@ -144,16 +139,16 @@ def add_attendee_connection():
     id2 = input("Enter second attendee ID: ")
 
     if not id1.isdigit() or not id2.isdigit():
-        print("Invalid ID")
+        print("Invalid IDs")
         return
     
     driver = get_neo4j_driver()
 
     with driver.session() as session:
         session.run("""
-            MERGE (a:Attendee {attendeeID:$id1})
-            MERGE (b:Attendee {attendeeID:$id2})
-            MERGE (a)-[:CONNECTED_TO]-(b)
+        MERGE (a:Attendee {attendeeID:$id1})
+        MERGE (b:Attendee {attendeeID:$id2})
+        MERGE (a)-[:CONNECTED_TO]-(b)
         """, id1=int(id1), id2=int(id2))
 
     driver.close()
@@ -167,8 +162,8 @@ def view_rooms():
     cursor.execute("SELECT roomID, roomName, capicity FROM room")
     results = cursor.fetchall()
 
-    for r in results:
-        print(f"Room ID: {r[0]}, Name: {r[1]}, Capacitry: {r[2]}")
+    for row in results:
+        print(f"Room ID: {row[0]}, Name: {row[1]}, Capacitry: {row[2]}")
 
     cursor.close()
     conn.close()
@@ -200,7 +195,6 @@ def main():
         elif choice == "6":
             view_rooms()
         elif choice == "x":
-            print("Exiting...")
             break
         else:
             print("Invalid option")
