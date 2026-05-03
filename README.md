@@ -4,15 +4,7 @@ This project is a Python application created for the Applied Databases module.
 
 It is a conference management system that uses:
 - MySQL (relational database)
-- Neo4j ( graph database)
-
-The application allows users to manage attendees, sessions, and connections between attendees.
-
-## Technologies used
-- Python
-- MySQL
-- Neo4j
-- Github
+- Neo4j (graph database)
 
 ## Features
 1. View Speakers and Sessions
@@ -48,3 +40,6 @@ python main.py
 ## Notes
 - This project was tested on the VM before submission
 - MySQL and Neo4j must be running before executing the program.
+
+## Author
+Name: Aiswaria Lajan
