@@ -249,3 +249,18 @@ def add_attendee_connection():
         driver.close()
         print(f"Attendee {id1} is now connected to Attendee {id2}")
         return
+    
+# Option 6: View rooms (cached)
+def view_rooms():
+    global _rooms_cache
+    if _rooms_cache is None:
+        conn = get_mysql_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT roomID, roomName, capacity FROM room ORDER BY roomID")
+        _rooms_cache = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+    print(f"{'RoomID':<8} | {'RoomName':<20} | Capacity")
+    for row in _rooms_cache:
+        print(f"{row[0]:<8} | {row[1]:<20} | {row[2]}")
