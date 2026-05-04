@@ -92,3 +92,52 @@ def view_attendees_by_company():
                 date = str(row[4])
                 print(f"{row[0]:<18} | {dob} | {row[2]:<38} | {row[3]:<20} | {date} | {row[5]}")
                 break # done
+
+# Option 3: Add new Attendee
+def add_new_attendee():
+    print("Add New Attendee")
+    print("-" * 16)
+
+    attendee_id = input("Attendee ID: ")
+    name = input("Name: ")
+    dob = input("DOB: ")
+    gender = input("Gender: ")
+    company_id = input("Company ID: ")
+
+    # Validate gender
+    if gender not in ("Male", "Female"):
+        print("*** ERROR *** Gender must be Male/Female")
+        return
+
+    conn = get_mysql_connection()
+    cursor = conn.cursor()
+
+    # Check company exists
+    try:
+        cursor.execute("SELECT companyID FROM company WHERE companyID = %s", (int(company_id),))
+    except Exception:
+        print("***ERROR *** Company ID: {company_id} does not exist")
+        cursor.close()
+        conn.close()
+        return
+    
+    if not cursor.fetchone():
+        print(f"*** ERROR *** Company ID: {company_id} does not exist")
+        cursor.close()
+        conn.close()
+        return
+    
+    try:
+        cursor.execute("""
+            INSERT INTO attendee 
+                (attendeeID, attendeeName, attendeeDOB, attendeeGender, attendeeCompanyID)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (attendee_id, name, dob, gender, company_id))
+        conn.commit()
+        print("Attendee added successfully")
+    except mysql.connector.Error as e:
+        # surface the MySQL error code  + message exactly as the spec shows
+        print(f"*** ERROR *** ({e.errno}, \"{e.msg}\")")
+    finally:
+        cursor.close()
+        conn.close()
