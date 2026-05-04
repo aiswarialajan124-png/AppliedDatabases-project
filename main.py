@@ -20,7 +20,7 @@ def get_neo4j_driver():
 _rooms_cache = None
 
 # Option 1: View Speakers and sessions
-def view_speakers_and_sessionsS():
+def view_speakers_sessions():
     name = input("Enter speaker name: ")
     print(f"Session Details for: {name}")
     print("-" * 44)
@@ -264,3 +264,37 @@ def view_rooms():
     print(f"{'RoomID':<8} | {'RoomName':<20} | Capacity")
     for row in _rooms_cache:
         print(f"{row[0]:<8} | {row[1]:<20} | {row[2]}")
+
+# Main menu
+def main():
+    while True:
+        print("\nConference Management")
+        print("---------------------")
+        print("\nMENU")
+        print("=====")
+        print("1. View Speakers and Sessions")
+        print("2. View Attendees by Company")
+        print("3. Add New Attendee")
+        print("4. View Connected Attendees")
+        print("5. Add Attendee Connection")
+        print("6. View Rooms")
+        print("x. Exit Application")
+        choice = input("Choice: ")
+
+        if choice == "1":
+            view_speakers_sessions()
+        elif choice == "2":
+            view_attendees_by_company()
+        elif choice == "3":
+            add_new_attendee()
+        elif choice == "4":
+            view_connected_attendees()
+        elif choice == "5":
+            add_attendee_connection()
+        elif choice == "6":
+            view_rooms()
+        elif choice == "x":
+            break
+
+if __name__ == "__main__":
+    main()
