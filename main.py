@@ -194,3 +194,58 @@ def view_connected_attendees():
         cursor.close()
         conn.close()
         return
+    
+# Option 5: Add attendee connection
+def add_attendee_connection():
+    while True:
+        id1 = input("Enter Attendee 1 ID: ")
+        id2 = input("Enter Attendee 2 ID: ")
+
+        if not id1.isdigit() or not id2.isdigit():
+            print("*** ERROR *** Attendee IDs must be numbers")
+            continue
+
+        id1, id2 = int(id1), int(id2)
+
+        if id1 == id2:
+            print("*** ERROR *** An attendee cannot connect to him/herself")
+            continue
+
+        # verify both exist in MySQL
+        conn = get_mysql_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+             "SELECT attendeeID FROM attendee WHERE attendeeID IN (%s, %s)", (id1, id2)
+        )
+        found = [r[0] for r in cursor.fetchall()]
+        cursor.close()
+        conn.close()
+
+        if len(found) < 2:
+            print("*** ERROR *** One or both attendee IDs do not exist")
+            continue
+
+        # check for existing connections in Neo4j
+        driver = get_neo4j_driver()
+        with driver.session() as neo_session:
+            check = neo_session.run("""
+                MATCH (a:Attendee {attendeeID: $id1})-[CONNECTED_TO]-(b:Attendee {attendeeID: $id2})
+                RETURN count(*) AS cnt
+            """, id1=id1, id2=id2)
+            already = check.single()["cnt"] > 0
+
+            if already:
+                driver.close()
+                print("*** ERROR *** These attendees are already connected")
+                continue
+
+            # create connection
+            neo_session.run("""
+                MERGE (a:Attendee {attendeeID: $id1})
+                MERGE (b:Attendee {attendeeID: $id2})
+                MERGE (a)-[:CONNECTED_TO]->(b)
+            """, id1=id1, id2=id2)
+
+        driver.close()
+        print(f"Attendee {id1} is now connected to Attendee {id2}")
+        return
