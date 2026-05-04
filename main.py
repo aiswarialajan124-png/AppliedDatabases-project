@@ -141,3 +141,56 @@ def add_new_attendee():
     finally:
         cursor.close()
         conn.close()
+
+# Option 4: View connected attendees
+def view_connected_attendees():
+    while True:
+        attendee_id = input("Enter Attendee ID: ")
+        if not attendee_id.isdigit():
+            print("*** ERROR *** Invalid attendee ID")
+            continue
+
+        attendee_id = int(attendee_id)
+
+        # look up name in MySQL first
+        conn = get_mysql_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT attendeeName FROM attendee WHERE attendeeID = %s", (attendee_id,))
+        mysql_row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if not mysql_row:
+            print("*** ERROR *** Attendee does not exist")
+            return
+        
+        attendee_name = mysql_row[0]
+        print(f"Attendee Name: {attendee_name}")
+        print("-" * 20)
+
+        # query Neo4j for connections
+        driver = get_neo4j_driver()
+        with driver.session() as neo_session:
+            result = neo_session.run("""
+                MATCH (a:Attendee {attendeeID: $id})-[:CONNECTED_TO]-(b:Attendee)
+                RETURN b.attendeeID AS connID
+            """, id=attendee_id)
+            connected_ids = [record["connID"] for record in result]
+        driver.close()
+
+        if not connected_ids:
+            print("No connections")
+            return
+        
+        # resolve names from MySQL
+        conn = get_mysql_connection()
+        cursor = conn.cursor()
+        print("These attendees are connected: ")
+        for cid in connected_ids:
+            cursor.execute("SELECT attendeeName FROM attendee WHERE attendeeID = %s", (cid,))
+            row = cursor.fetchone()
+            cname = row[0] if row else "(unknown)"
+            print(f"{cid:<6} | {cname}")
+        cursor.close()
+        conn.close()
+        return
