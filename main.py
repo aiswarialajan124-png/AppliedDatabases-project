@@ -16,14 +16,13 @@ def get_neo4j_driver():
         auth=("neo4j", "neo4jneo4j")
     )
 
-#  cached room data (spec says new rooms added mid-session should not appear)
+# Cached room data
 _rooms_cache = None
 
-# option 1 – view speakers & sessions 
-
+# Option 1 - View speakers & sessions
 def view_speaker_sessions():
-    name = input("Enter speaker name : ")
-    print(f"Session Details For :  {name}")
+    name = input("Enter speaker name: ")
+    print(f"Session Details for: {name}")
     print("-" * 44)
 
     conn = get_mysql_connection()
@@ -42,19 +41,17 @@ def view_speaker_sessions():
     conn.close()
 
     if not results:
-        print("No speakers found of that name")
+        print("Speaker not found")
     else:
         for row in results:
-            # print speaker | session title | room name
             print(f"{row[0]:<22} | {row[1]:<35} | {row[2]}")
 
-# option 2 – view attendees by company 
-
+# Option 2 - View attendees by company
 def view_attendees_by_company():
     while True:
-        company_id = input("Enter Company ID : ")
-
-        # must be a positive integer - keep asking if not
+        company_id = input("Enter Company ID: ")
+        
+        # Must be a positive integer (keep asking if not)
         if not company_id.lstrip('-').isdigit() or int(company_id) <= 0:
             continue
 
@@ -62,29 +59,24 @@ def view_attendees_by_company():
         conn = get_mysql_connection()
         cursor = conn.cursor()
 
-        # check if company exists first
         cursor.execute("SELECT companyName FROM company WHERE companyID = %s", (company_id,))
         company = cursor.fetchone()
 
         if not company:
-            # company id is valid number but doesnt exist in db
-            print(f"Company with ID  {company_id}  doesn't exist")
+            print(f"Company with ID {company_id} doesnt exist")
             cursor.close()
             conn.close()
             continue
 
         company_name = company[0]
-        print(f"{company_name}  Attendees")
+        print(f"{company_name} Attendees")
 
-        # get attendee details with session info, date and room
-        # updated spec adds date as second last column
         cursor.execute("""
-            SELECT a.attendeeName, a.attendeeDOB,
-                   s.sessionTitle, s.speakerName, s.sessionDate, r.roomName
+            SELECT a.attendeeName, a.attendeeDOB, s.sessionTitle, s.speakerName, s.sessionDate, r.roomName
             FROM attendee a
             JOIN registration reg ON a.attendeeID = reg.attendeeID
-            JOIN session s        ON reg.sessionID = s.sessionID
-            JOIN room r           ON s.roomID = r.roomID
+            JOIN session s ON reg.sessionID = s.sessionID
+            JOIN room r ON s.roomID = r.roomID
             WHERE a.attendeeCompanyID = %s
             ORDER BY a.attendeeName
         """, (company_id,))
@@ -94,86 +86,80 @@ def view_attendees_by_company():
         conn.close()
 
         if not rows:
-            # company exists but no attendees registered for any session
-            print(f"No attendees found for  {company_name}")
+            print(f"No attendees found for {company_name}")
         else:
             for row in rows:
-                dob  = str(row[1])
+                dob = str(row[1])
                 date = str(row[4])
-                # name | dob | session title | speaker | date | room
                 print(f"{row[0]:<18} | {dob} | {row[2]:<38} | {row[3]:<20} | {date} | {row[5]}")
         break
 
-# option 3 – add new attendee 
-
+# Option 3 - Add new attendee
 def add_new_attendee():
-    print("Add New Attendee")
+    print("Add new attendee")
     print("-" * 16)
 
-    attendee_id = input("Attendee ID : ")
-    name        = input("Name : ")
-    dob         = input("DOB : ")
-    gender      = input("Gender : ")
-    company_id  = input("Company ID : ")
+    attendee_id = input("Attendee ID: ")
+    name = input("Namw: ")
+    dob = input("DOB: ")
+    gender = input("Gender: ")
+    company_id = input("Company ID: ")
 
-    # validate gender before touching the database
+    # validate gender
     if gender not in ("Male", "Female"):
-        print("*** ERROR *** Gender must be Male/Female")
+        print("Error: Gender must be Male/Female")
         return
-
-    conn   = get_mysql_connection()
+    
+    conn = get_mysql_connection()
     cursor = conn.cursor()
 
-    # check company exists before inserting
+    # check company exists
     try:
         cid = int(company_id)
         cursor.execute("SELECT companyID FROM company WHERE companyID = %s", (cid,))
         if not cursor.fetchone():
-            print(f"*** ERROR *** Company ID: {company_id} does not exist")
+            print(f"Error: Company ID - {company_id} does not exist")
             cursor.close()
             conn.close()
             return
     except ValueError:
-        print(f"*** ERROR *** Company ID: {company_id} does not exist")
+        print(f"Error: Company ID - {company_id} does not exist")
         cursor.close()
         conn.close()
         return
-
+    
     try:
         cursor.execute("""
-            INSERT INTO attendee
-                (attendeeID, attendeeName, attendeeDOB, attendeeGender, attendeeCompanyID)
+            INSERT INTO attendee (attendeeID, attendeeName, attendeeDOB, attendeeGender, attendeeCompanyID)
             VALUES (%s, %s, %s, %s, %s)
         """, (attendee_id, name, dob, gender, company_id))
         conn.commit()
         print("Attendee successfully added")
 
-    except mysql.connector.Error as e:
-        # check for duplicate attendee id (error 1062)
-        if e.errno == 1062:
-            print(f"*** ERROR *** Attendee ID: {attendee_id} already exists")
+    except pymysql.err.IntegrityError as e:
+        if e.args[0] == 1062:
+            print(f"Error: Attendee ID - {attendee_id} already exists")
         else:
-            # show the mysql error for invalid id, dob etc as per spec
-            print(f"*** ERROR *** ({e.errno}, \"{e.msg}\")")
+            print(f"Error: ({e.args[0]}, \"{e.args[1]}\")")
+    except pymysql.Error as e:
+        print(f"Error: ({e.args[0]}, \"{e.args[1]}\")")
     finally:
         cursor.close()
         conn.close()
 
-# option 4 – view connected attendees
-
-def view_connected_attendees():
+# Option 4 - View connected attendees
+def view_connected_attendee():
     while True:
-        attendee_id = input("Enter Attendee ID : ")
+        attendee_id = input("Enter Attendee ID: ")
 
-        # must be numeric
         if not attendee_id.isdigit():
-            print("*** ERROR *** Invalid attendee ID")
+            print("Error: Invalid Attendee ID")
             continue
 
         attendee_id = int(attendee_id)
 
-        # check attendee exists in mysql first
-        conn   = get_mysql_connection()
+        # check attendee exists in MySQL
+        conn = get_mysql_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT attendeeName FROM attendee WHERE attendeeID = %s", (attendee_id,))
         mysql_row = cursor.fetchone()
@@ -181,15 +167,14 @@ def view_connected_attendees():
         conn.close()
 
         if not mysql_row:
-            # not in mysql or neo4j
-            print("*** ERROR *** Attendee does not exist")
+            print("Error: Attendee does not exist")
             return
-
+        
         attendee_name = mysql_row[0]
-        print(f"Attendee Name:  {attendee_name}")
+        print(f"Attendee Name: {attendee_name}")
         print("-" * 20)
 
-        # now check neo4j for connections
+        # Check Neo4j for connections
         driver = get_neo4j_driver()
         with driver.session() as neo_session:
             result = neo_session.run("""
@@ -200,14 +185,13 @@ def view_connected_attendees():
         driver.close()
 
         if not connected_ids:
-            # in mysql but not in neo4j or no connections
             print("No connections")
             return
-
-        # look up the name of each connected attendee from mysql
-        conn   = get_mysql_connection()
+        
+        # look up names from MySQL
+        conn = get_mysql_connection()
         cursor = conn.cursor()
-        print("These attendees are connected:")
+        print("These attendees are connected: ")
         for cid in connected_ids:
             cursor.execute("SELECT attendeeName FROM attendee WHERE attendeeID = %s", (cid,))
             row = cursor.fetchone()
@@ -216,29 +200,25 @@ def view_connected_attendees():
         cursor.close()
         conn.close()
         return
-
-# option 5 – add attendee connection 
-
+    
+# Option 5 - Add attendee connection
 def add_attendee_connection():
     while True:
-        id1 = input("Enter Attendee 1 ID : ")
-        id2 = input("Enter Attendee 2 ID : ")
+        id1 = input("Enter Attendee 1 ID: ")
+        id2 = input("Enter Attendee 2 ID: ")
 
-        # both must be numeric
         if not id1.isdigit() or not id2.isdigit():
-            print("*** ERROR *** Attendee IDs must be numbers")
+            print("Error: Attendee IDs must be numbers")
             continue
 
         id1, id2 = int(id1), int(id2)
 
-        # attendee cannot connect to themselves
         if id1 == id2:
-            print("*** ERROR *** An attendee cannot connect to him/herself")
+            print("Error: An attendee cannot connect to themselves")
             continue
 
-        # verify both attendees exist in mysql
-        # if either doesnt exist we should not create neo4j nodes
-        conn   = get_mysql_connection()
+        # verify both exist in MySQL
+        conn = get_mysql_connection()
         cursor = conn.cursor()
         cursor.execute(
             "SELECT attendeeID FROM attendee WHERE attendeeID IN (%s, %s)", (id1, id2)
@@ -248,10 +228,10 @@ def add_attendee_connection():
         conn.close()
 
         if len(found) < 2:
-            print("*** ERROR *** One or both attendee IDs do not exist")
+            print("Error: One or both attendee IDs do not exist")
             continue
 
-        # check if already connected in neo4j (either direction)
+        # pass ints to Neo4j so property types match
         driver = get_neo4j_driver()
         with driver.session() as neo_session:
             check = neo_session.run("""
@@ -262,10 +242,10 @@ def add_attendee_connection():
 
             if already:
                 driver.close()
-                print("*** ERROR *** These attendees are already connected")
+                print("Error: These attendees already connected")
                 continue
 
-            # create the connection - use MERGE so nodes are created if not already in neo4j
+            # MERGE creates nodes if they don't exist yet
             neo_session.run("""
                 MERGE (a:Attendee {attendeeID: $id1})
                 MERGE (b:Attendee {attendeeID: $id2})
@@ -275,15 +255,13 @@ def add_attendee_connection():
         driver.close()
         print(f"Attendee {id1} is now connected to Attendee {id2}")
         return
-
-# option 6 – view rooms (cached on first call)
-
+    
+# Option 6 - View rooms
 def view_rooms():
     global _rooms_cache
 
-    # only fetch from db once - new rooms added after wont show until restart
     if _rooms_cache is None:
-        conn   = get_mysql_connection()
+        conn = get_mysql_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT roomID, roomName, capacity FROM room ORDER BY roomID")
         _rooms_cache = cursor.fetchall()
@@ -294,7 +272,7 @@ def view_rooms():
     for row in _rooms_cache:
         print(f"{row[0]:<8} | {row[1]:<20} | {row[2]}")
 
-# main menu
+# Main menu
 def main():
     while True:
         print("\nConference Management")
@@ -309,15 +287,14 @@ def main():
         print("6 - View Rooms")
         print("x - Exit application")
         choice = input("Choice: ")
-
+ 
         if   choice == "1": view_speaker_sessions()
         elif choice == "2": view_attendees_by_company()
         elif choice == "3": add_new_attendee()
-        elif choice == "4": view_connected_attendees()
+        elif choice == "4": view_connected_attendee()
         elif choice == "5": add_attendee_connection()
         elif choice == "6": view_rooms()
         elif choice == "x": break
-        # anything else - show menu again
-
+ 
 if __name__ == "__main__":
     main()
