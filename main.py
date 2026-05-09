@@ -1,10 +1,9 @@
+import pymysql
 from neo4j import GraphDatabase
-import mysql.connector
 
-# connection helpers 
-
+# Connection helpers
 def get_mysql_connection():
-    return mysql.connector.connect(
+    return pymysql.connect(
         host="localhost",
         user="root",
         password="root",
