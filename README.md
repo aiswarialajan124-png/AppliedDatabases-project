@@ -86,8 +86,8 @@ Displays all rooms in the system with their ID, name and capacity. Room data is 
 AppliedDatabases-project/
 |── appdbproj.sql
 |── appdbprojNeo4j.json
-|── main.py
 |── GitLink.txt
+|── main.py
 |── README.md
 └── innovation.doc 
 ```
