@@ -81,6 +81,21 @@ If an attendee exists in MySQL but not yet in Neo4j, the node is created automat
 ### Option 6 - View Rooms
 Displays all rooms in the system with their ID, name and capacity. Room data is loaded from MySQL on the first call and cached for the rest of the session -  any rooms added to the database while the application is running will not appear until it is restarted.
 
+## Project Structure
+```
+AppliedDatabases-project/
+|── appdbproj.sql
+|── appdbprojNeo4j.json
+|── main.py
+|── GitLink.txt
+|── README.md
+└── innovation.doc 
+```
+
+## Notes
+- All testing was done on the ATU Virtual Machine
+
+- MySQL and Neo4j must both be running before starting the application
 
 ## Author
 Name: Aiswaria Lajan
