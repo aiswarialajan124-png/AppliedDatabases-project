@@ -1,10 +1,11 @@
 # Applied Databases Project
 
-This project is a Python application created for the Applied Databases module.
+## Overview
+This is a comand-line conference management application built in Python for the Applied Databases module.
 
-It is a conference management system that uses:
-- MySQL (relational database)
-- Neo4j (graph database)
+It uses two different types of databases working together -  a **MySQL** relational database to store attendee, company, session and room data, and a **Neo4j** graph database to store and query connections between attendees.
+
+
 
 ## Features
 1. View Speakers and Sessions
