@@ -100,7 +100,7 @@ def add_new_attendee():
     print("-" * 16)
 
     attendee_id = input("Attendee ID: ")
-    name = input("Namw: ")
+    name = input("Name: ")
     dob = input("DOB: ")
     gender = input("Gender: ")
     company_id = input("Company ID: ")
