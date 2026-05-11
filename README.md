@@ -20,38 +20,29 @@ A relational database containing the following tables:
 ### Neo4j - 'appdbprojNeo4j'
 A graph database storing 'Attendee' nodes and 'CONNECTED_TO' relationships between them. The direction of the relationship does not matter - if A is connected to B, B is also connected to A.
 
+## Setup Instructions
 
+### 1: Install Required Packages
+```bash
+pip install mypysql neo4j cryptography
+```
+**Note:** This project uses `pymysql` instead of `mysql-connector-pyhton`. The standard mysql-connector package (version 9.6) crashes silently on some systems, so pymysql was used as a reliable alternative. The `cryptography` package is required for MySQL SHA256 password authentication.
 
-## Features
-1. View Speakers and Sessions
-2. View Attendees by Company
-3. Add New Attendees
-4. View Connected Attendees
-5. Add Attendee Connection
-6. View Rooms
+### 2: Set up MySQL
+- Open MySQL Workbench
+- Run `appdbproj.sql` to create and populate the database.
 
-## How to Run the Project
+### 3: Set up Neo4j
+- Open Neo4j browser at `http://localhost:7474`
+- Make sure you are connected to the `appdbprojNeo4j` database
+- Run the Cypher statements from `appdbprojNeo4j.json` to create the attendee nodes and relationships
 
-### Step 1: Install Required Packages
-Run the following commands:
-
-pip install mysql-connector-python
-pip install neo4j
-
-### Step 2: Setup Databases
-This project is designed to run on VM
-
-#### MySQL
-- Import the file: appdbproj.sql
-- Database name: appdbproj
-
-#### Neo4j
-- Import the file: adddbprojNeo4j.json
-- Database name: appdbprojNeo4j
-
-### Step 3: Run the Application
-
+### 4: Run the Application
+Make sure both MySQL and Neo4j are running, then:
+```bash
 python main.py
+```
+
 
 ## Notes
 - This project was tested on the VM before submission
