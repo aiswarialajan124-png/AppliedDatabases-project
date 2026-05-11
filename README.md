@@ -99,4 +99,4 @@ AppliedDatabases-project/
 - MySQL and Neo4j must both be running before starting the application
 
 ## Author
-Name: Aiswaria Lajan
+Aiswaria Lajan
