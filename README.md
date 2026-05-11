@@ -5,6 +5,21 @@ This is a comand-line conference management application built in Python for the 
 
 It uses two different types of databases working together -  a **MySQL** relational database to store attendee, company, session and room data, and a **Neo4j** graph database to store and query connections between attendees.
 
+The application was developed and tested on the ATU Virtual Machine.
+
+## Database Used
+
+### MySQL - 'appdbproj'
+A relational database containing the following tables:
+- 'company' - companies that attendees belong to 
+- 'attendee' - conference attendees and their details
+- 'session' - conference sessions with speaker, date and room
+- 'room' - rooms where sessions are held
+- 'registration' - records of which attendees attended which sessions.
+
+### Neo4j - 'appdbprojNeo4j'
+A graph database storing 'Attendee' nodes and 'CONNECTED_TO' relationships between them. The direction of the relationship does not matter - if A is connected to B, B is also connected to A.
+
 
 
 ## Features
