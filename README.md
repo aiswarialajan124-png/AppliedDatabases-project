@@ -43,10 +43,44 @@ Make sure both MySQL and Neo4j are running, then:
 python main.py
 ```
 
+## Menu Options
+```
+1 - View Speakers & Sessions
+2 - View Attendees by Company
+3 - Add New Attendee
+4 - View Connected Attendees
+5 - Add Attendee Connection
+6 - View Rooms
+x - Exit application
+```
 
-## Notes
-- This project was tested on the VM before submission
-- MySQL and Neo4j must be running before executing the program.
+### Option 1 - View Speakers & Sessions
+Enter a speakers name or part of a name. The app searches the MySQL session table using a LIKE query and returns all matching speakers along with their sessions on title and room name.
+
+### Option 2 - View Attendees by Company
+Enter a company ID to see all attendees registrated from that company. For each attendee it shows their name, date of birth, session title, speaker name, session date and room. The company ID must be a positive number - invalid inputs are rejected and the user is asked again.
+
+### Option 3 - Add New Attendee
+Prompts the user to enter a new attendee's detail (ID, name, date of birth, gender, and company ID) and inserts them into the MySQL attendee table. The following are validated before inserting:
+- Gender must be Male or Female
+- Company ID must exist in the database
+- Attendee ID must not already exist
+
+### Option 4 - View Connected Attendees
+Enter an attendee ID to see who they are connected to in the Neo4j graph database. The app first checks MySQL to confirm the attendee exists, then queries Neo4j for any CONNECTED_TO relationships in either direction. If the attendee has no connections it shows "No connections".
+
+### Option 5 - Add Attendee Connection
+Enter two attendee IDs to create a CONNECTED_TO relationship between them in Neo4j. Before creating the connection the app checks:
+- Both IDs must be numbers
+- An attendee cannot connect to themselves
+- Both attendees must exist in MySQL
+- They must not already be connected
+
+If an attendee exists in MySQL but not yet in Neo4j, the node is created automatically using MERGE.
+
+### Option 6 - View Rooms
+Displays all rooms in the system with their ID, name and capacity. Room data is loaded from MySQL on the first call and cached for the rest of the session -  any rooms added to the database while the application is running will not appear until it is restarted.
+
 
 ## Author
 Name: Aiswaria Lajan
