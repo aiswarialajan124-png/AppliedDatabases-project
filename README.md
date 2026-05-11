@@ -87,9 +87,10 @@ AppliedDatabases-project/
 |── appdbproj.sql
 |── appdbprojNeo4j.json
 |── GitLink.txt
+|── Innovation Document.pdf
 |── main.py
 |── README.md
-└── innovation.doc 
+└── test.py
 ```
 
 ## Notes
